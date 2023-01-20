@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{messages::master::MasterMessage, Status, Failure};
+use crate::{
+    messages::master::MasterMessage,
+    status::{Failure, Status},
+};
 use actix::{Actor, Context, Handler};
 
 /**
@@ -36,14 +39,15 @@ impl Handler<MasterMessage> for Master {
 
     fn handle(&mut self, msg: MasterMessage, _ctx: &mut Context<Self>) {
         match msg {
-            MasterMessage::Parse(parse) =>{
+            MasterMessage::Parse(parse) => {
                 match parse {
                     crate::messages::master::Parse::Success(_msg) => {
                         // TODO: create a downloader and send him a download message
                     }
                     crate::messages::master::Parse::Failed(msg) => {
                         println!("Received ParseFailedMessage");
-                        self.urls.insert(msg.url, Status::Failure(Failure::ParseFailure));
+                        self.urls
+                            .insert(msg.url, Status::Failure(Failure::ParseFailure));
                     }
                 }
             }

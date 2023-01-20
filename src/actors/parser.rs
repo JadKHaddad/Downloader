@@ -1,5 +1,5 @@
-use actix::{Actor, Context, Handler};
 use crate::messages::parse::ParseMessage;
+use actix::{Actor, Context, Handler};
 
 pub struct Parser {
     // ...

@@ -1,7 +1,6 @@
 use actix::Message;
 
-use super::parse::ParseFailedMessage;
-use super::parse::ParseSuccessMessage;
+use super::parse::{ParseFailedMessage, ParseSuccessMessage};
 
 #[derive(Message)]
 #[rtype(result = "()")]

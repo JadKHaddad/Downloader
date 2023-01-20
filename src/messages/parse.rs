@@ -1,4 +1,4 @@
-use actix::{Message};
+use actix::Message;
 
 #[derive(Message)]
 #[rtype(result = "()")]
