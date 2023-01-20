@@ -1,4 +1,5 @@
 pub enum Status {
+    Created,
     Success,
     Failure(Failure),
 }

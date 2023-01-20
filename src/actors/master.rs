@@ -14,8 +14,8 @@ pub struct Master {
     urls: HashMap<String, Status>,
 }
 
-impl Master {
-    pub fn new() -> Self {
+impl Default for Master {
+    fn default() -> Self {
         Master {
             urls: HashMap::new(),
         }
@@ -39,6 +39,11 @@ impl Handler<MasterMessage> for Master {
 
     fn handle(&mut self, msg: MasterMessage, _ctx: &mut Context<Self>) {
         match msg {
+            MasterMessage::UserInput(user_input) => {
+                println!("Received UserInputMessage");
+                self.urls.insert(user_input.url, Status::Created);
+                // TODO: create a parser and send him a parse message
+            }
             MasterMessage::Parse(parse) => {
                 match parse {
                     crate::messages::master::Parse::Success(_msg) => {

@@ -24,6 +24,6 @@ impl Handler<ParseMessage> for Parser {
         println!("Received ParseMessage");
         // parse url
         // send ParseFailedMessage if failed
-        // create a downloader and send him a download message
+        // send ParseSuccessMessage if success
     }
 }
