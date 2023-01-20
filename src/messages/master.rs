@@ -1,12 +1,15 @@
 use actix::Message;
 
-use crate::InputMessage;
-
 use super::parse::ParseFailedMessage;
+use super::parse::ParseSuccessMessage;
 
 #[derive(Message)]
 #[rtype(result = "()")]
 pub enum MasterMessage {
-    InputMessage(InputMessage),
-    ParseFailedMessage(ParseFailedMessage),
+    Parse(Parse),
+}
+
+pub enum Parse {
+    Success(ParseSuccessMessage),
+    Failed(ParseFailedMessage),
 }
