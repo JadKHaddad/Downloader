@@ -4,7 +4,6 @@ use crate::messages::{
     master::{Download, MasterMessage},
 };
 use actix::{fut, Actor, ActorFutureExt, Addr, Context, ContextFutureSpawner, Handler, WrapFuture};
-use reqwest::get;
 
 pub struct Downloader {
     pub master_addr: Addr<Master>,
@@ -26,7 +25,7 @@ impl Handler<DownloadMessage> for Downloader {
     type Result = ();
 
     fn handle(&mut self, incoming_msg: DownloadMessage, _ctx: &mut Context<Self>) {
-        get(incoming_msg.parsed_url)
+        reqwest::get(incoming_msg.parsed_url)
             .into_actor(self)
             .then(|res, act, _ctx| {
                 let msg = match res {

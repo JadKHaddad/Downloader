@@ -4,6 +4,7 @@ use super::{
     download::{DownloadFailedMessage, DownloadSuccessMessage},
     parse::{ParseFailedMessage, ParseSuccessMessage},
     user_input::UserInput,
+    write::{WriteFailedMessage, WriteSuccessMessage},
 };
 
 #[derive(Message)]
@@ -12,6 +13,7 @@ pub enum MasterMessage {
     UserInput(UserInput),
     Parse(Parse),
     Download(Download),
+    Write(Write),
 }
 
 pub enum Parse {
@@ -22,4 +24,9 @@ pub enum Parse {
 pub enum Download {
     Success(DownloadSuccessMessage),
     Failed(DownloadFailedMessage),
+}
+
+pub enum Write {
+    Success(WriteSuccessMessage),
+    Failed(WriteFailedMessage),
 }

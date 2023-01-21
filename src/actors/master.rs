@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
 use crate::{
-    actors::{downloader::Downloader, parser::Parser},
-    messages::{download::DownloadMessage, master::MasterMessage, parse::ParseMessage},
+    actors::{downloader::Downloader, parser::Parser, writer::Writer},
+    messages::{
+        download::DownloadMessage, master::MasterMessage, parse::ParseMessage, write::WriteMessage,
+    },
     status::{Failure, Status},
 };
 use actix::{Actor, AsyncContext, Context, Handler};
@@ -85,9 +87,22 @@ impl Handler<MasterMessage> for Master {
             }
             MasterMessage::Download(download) => {
                 match download {
-                    crate::messages::master::Download::Success(_msg) => {
+                    crate::messages::master::Download::Success(download_success_msg) => {
                         println!("Received DownloadSuccessMessage");
-                        // TODO: Writer!
+
+                        // start a writer
+                        let writer_addr = Writer {
+                            master_addr: ctx.address(),
+                        }
+                        .start();
+
+                        // send the writer a write message
+                        let msg = WriteMessage {
+                            url: download_success_msg.url,
+                            response: download_success_msg.response,
+                        };
+
+                        writer_addr.do_send(msg);
                     }
                     crate::messages::master::Download::Failed(msg) => {
                         println!("Received DownloadFailedMessage");
@@ -96,6 +111,17 @@ impl Handler<MasterMessage> for Master {
                     }
                 }
             }
+            MasterMessage::Write(write) => match write {
+                crate::messages::master::Write::Success(write_success_msg) => {
+                    println!("Received WriteSuccessMessage");
+                    self.urls.insert(write_success_msg.url, Status::Success);
+                }
+                crate::messages::master::Write::Failed(msg) => {
+                    println!("Received WriteFailedMessage");
+                    self.urls
+                        .insert(msg.url, Status::Failure(Failure::WriteFailure));
+                }
+            },
         }
     }
 }

@@ -7,4 +7,5 @@ pub enum Status {
 pub enum Failure {
     ParseFailure,
     DownloadFailure,
+    WriteFailure,
 }
