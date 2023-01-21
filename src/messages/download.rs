@@ -1,5 +1,5 @@
 use actix::Message;
-use reqwest::{blocking::Response, Error as ReqwestError, Url};
+use reqwest::{Error as ReqwestError, Response, Url};
 
 #[derive(Message)]
 #[rtype(result = "()")]
