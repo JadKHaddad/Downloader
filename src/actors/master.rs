@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    actors::parser::Parser,
-    messages::{master::MasterMessage, parse::ParseMessage},
+    actors::{downloader::Downloader, parser::Parser},
+    messages::{download::DownloadMessage, master::MasterMessage, parse::ParseMessage},
     status::{Failure, Status},
 };
 use actix::{Actor, AsyncContext, Context, Handler};
@@ -59,14 +59,40 @@ impl Handler<MasterMessage> for Master {
             }
             MasterMessage::Parse(parse) => {
                 match parse {
-                    crate::messages::master::Parse::Success(_msg) => {
+                    crate::messages::master::Parse::Success(parse_success_msg) => {
                         println!("Received ParseSuccessMessage");
-                        // TODO: create a downloader and send him a download message
+
+                        // start a downloader
+                        let downloader_addr = Downloader {
+                            master_addr: ctx.address(),
+                        }
+                        .start();
+
+                        // send the downloader a download message
+                        let msg = DownloadMessage {
+                            url: parse_success_msg.url,
+                            parsed_url: parse_success_msg.parsed_url,
+                        };
+
+                        downloader_addr.do_send(msg);
                     }
                     crate::messages::master::Parse::Failed(msg) => {
                         println!("Received ParseFailedMessage");
                         self.urls
                             .insert(msg.url, Status::Failure(Failure::ParseFailure));
+                    }
+                }
+            }
+            MasterMessage::Download(download) => {
+                match download {
+                    crate::messages::master::Download::Success(_msg) => {
+                        println!("Received DownloadSuccessMessage");
+                        // TODO: Writer!
+                    }
+                    crate::messages::master::Download::Failed(msg) => {
+                        println!("Received DownloadFailedMessage");
+                        self.urls
+                            .insert(msg.url, Status::Failure(Failure::DownloadFailure));
                     }
                 }
             }
