@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use crate::{
-    messages::master::MasterMessage,
+    actors::parser::Parser,
+    messages::{master::MasterMessage, parse::ParseMessage},
     status::{Failure, Status},
 };
-use actix::{Actor, Context, Handler};
+use actix::{Actor, AsyncContext, Context, Handler};
 
 /**
  * Only the master has access to the input/output channels
@@ -37,16 +38,29 @@ impl Actor for Master {
 impl Handler<MasterMessage> for Master {
     type Result = ();
 
-    fn handle(&mut self, msg: MasterMessage, _ctx: &mut Context<Self>) {
+    fn handle(&mut self, msg: MasterMessage, ctx: &mut Context<Self>) {
         match msg {
             MasterMessage::UserInput(user_input) => {
                 println!("Received UserInputMessage");
-                self.urls.insert(user_input.url, Status::Created);
-                // TODO: create a parser and send him a parse message
+                self.urls.insert(user_input.url.clone(), Status::Created);
+
+                // start a parser
+                let parser_addr = Parser {
+                    master_addr: ctx.address(),
+                }
+                .start();
+
+                // send the parser a parse message
+                let msg = ParseMessage {
+                    url: user_input.url,
+                };
+
+                parser_addr.do_send(msg);
             }
             MasterMessage::Parse(parse) => {
                 match parse {
                     crate::messages::master::Parse::Success(_msg) => {
+                        println!("Received ParseSuccessMessage");
                         // TODO: create a downloader and send him a download message
                     }
                     crate::messages::master::Parse::Failed(msg) => {
