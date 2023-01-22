@@ -24,7 +24,7 @@ impl Actor for Downloader {
 impl Handler<DownloadMessage> for Downloader {
     type Result = ();
 
-    fn handle(&mut self, incoming_msg: DownloadMessage, _ctx: &mut Context<Self>) {
+    fn handle(&mut self, incoming_msg: DownloadMessage, ctx: &mut Context<Self>) {
         reqwest::get(incoming_msg.parsed_url)
             .into_actor(self)
             .then(|res, act, _ctx| {
@@ -48,6 +48,6 @@ impl Handler<DownloadMessage> for Downloader {
                 act.master_addr.do_send(msg);
                 fut::ready(())
             })
-            .wait(_ctx);
+            .wait(ctx);
     }
 }

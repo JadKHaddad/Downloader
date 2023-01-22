@@ -1,3 +1,7 @@
+use crate::errors::file::Error as FileError;
+use reqwest::Error as ReqwestError;
+use std::io::Error as IoError;
+
 pub enum Status {
     Created,
     Success,
@@ -6,7 +10,7 @@ pub enum Status {
 
 pub enum Failure {
     ParseFailure,
-    DownloadFailure,
-    FileFailure,
-    WriteFailure,
+    DownloadFailure(ReqwestError),
+    FileFailure(FileError),
+    WriteFailure(IoError),
 }

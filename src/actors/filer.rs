@@ -28,7 +28,7 @@ impl Actor for Filer {
 impl Handler<FileMessage> for Filer {
     type Result = ();
 
-    fn handle(&mut self, incoming_msg: FileMessage, _ctx: &mut Context<Self>) {
+    fn handle(&mut self, incoming_msg: FileMessage, ctx: &mut Context<Self>) {
         let domain = incoming_msg.domain;
         incoming_msg
             .response
@@ -36,30 +36,16 @@ impl Handler<FileMessage> for Filer {
             .into_actor(self)
             .then(move |res, act, _ctx| {
                 let msg = match res {
-                    Ok(bytes) => {
-                        match infer::get(&bytes) {
-                            Some(kind) => {
-                                let extension = kind.extension();
-                                let mut full_filename = format!("{}.{}", domain, extension);
-                                if Path::new(&full_filename).exists() {
-                                    let mut counter = 0;
-                                    full_filename = loop {
-                                        if counter > 1000 {
-                                            panic!("Can't find a filename! you have 1000 files with the nearly same name! I'm out of ideas!");
-                                        }
-                                        let filename = format!("{}_{}.{}", domain, counter, extension);
-                                        if !Path::new(&filename).exists() {
-                                            break filename;
-                                        }
-                                        counter += 1;
-                                    };
-                                }
-                                match File::create(full_filename) {
+                    Ok(bytes) => match infer::get(&bytes) {
+                        Some(kind) => {
+                            let extension = kind.extension();
+                            match create_file_name(domain, extension) {
+                                Ok(full_filename) => match File::create(full_filename) {
                                     Ok(file) => {
                                         let file_success_msg = FileSuccessMessage {
                                             url: incoming_msg.url,
                                             file,
-                                            bytes
+                                            bytes,
                                         };
                                         MasterMessage::File(MasterFile::Success(file_success_msg))
                                     }
@@ -70,17 +56,24 @@ impl Handler<FileMessage> for Filer {
                                         };
                                         MasterMessage::File(MasterFile::Failed(file_failed_msg))
                                     }
+                                },
+                                Err(e) => {
+                                    let file_failed_msg = FileFailedMessage {
+                                        url: incoming_msg.url,
+                                        error: e,
+                                    };
+                                    MasterMessage::File(MasterFile::Failed(file_failed_msg))
                                 }
                             }
-                            None => {
-                                let file_failed_msg = FileFailedMessage {
-                                    url: incoming_msg.url,
-                                    error: FileError::UnknownFileType,
-                                };
-                                MasterMessage::File(MasterFile::Failed(file_failed_msg))
-                            }
                         }
-                    }
+                        None => {
+                            let file_failed_msg = FileFailedMessage {
+                                url: incoming_msg.url,
+                                error: FileError::UnknownFileType,
+                            };
+                            MasterMessage::File(MasterFile::Failed(file_failed_msg))
+                        }
+                    },
                     Err(_) => {
                         let file_failed_msg = FileFailedMessage {
                             url: incoming_msg.url,
@@ -92,6 +85,24 @@ impl Handler<FileMessage> for Filer {
                 act.master_addr.do_send(msg);
                 fut::ready(())
             })
-            .wait(_ctx);
+            .wait(ctx);
     }
+}
+
+fn create_file_name(domain: String, extension: &str) -> Result<String, FileError> {
+    let mut full_filename = format!("{}.{}", domain, extension);
+    if Path::new(&full_filename).exists() {
+        let mut counter = 0;
+        full_filename = loop {
+            if counter > 1000 {
+                return Err(FileError::CantCreateFileName);
+            }
+            let filename = format!("{}_{}.{}", domain, counter, extension);
+            if !Path::new(&filename).exists() {
+                break filename;
+            }
+            counter += 1;
+        };
+    }
+    Ok(full_filename)
 }

@@ -137,10 +137,12 @@ impl Master {
 
                 filer_addr.do_send(msg);
             }
-            crate::messages::master::Download::Failed(msg) => {
+            crate::messages::master::Download::Failed(download_fail_msg) => {
                 println!("Received DownloadFailedMessage");
-                self.urls
-                    .insert(msg.url, Status::Failure(Failure::DownloadFailure));
+                self.urls.insert(
+                    download_fail_msg.url,
+                    Status::Failure(Failure::DownloadFailure(download_fail_msg.error)),
+                );
             }
         }
     }
@@ -165,10 +167,12 @@ impl Master {
 
                 writer_addr.do_send(msg);
             }
-            crate::messages::master::File::Failed(msg) => {
+            crate::messages::master::File::Failed(file_fail_msg) => {
                 println!("Received FileFailedMessage");
-                self.urls
-                    .insert(msg.url, Status::Failure(Failure::FileFailure));
+                self.urls.insert(
+                    file_fail_msg.url,
+                    Status::Failure(Failure::FileFailure(file_fail_msg.error)),
+                );
             }
         }
     }
@@ -179,10 +183,12 @@ impl Master {
                 println!("Received WriteSuccessMessage");
                 self.urls.insert(write_success_msg.url, Status::Success);
             }
-            crate::messages::master::Write::Failed(msg) => {
+            crate::messages::master::Write::Failed(write_fail_msg) => {
                 println!("Received WriteFailedMessage");
-                self.urls
-                    .insert(msg.url, Status::Failure(Failure::WriteFailure));
+                self.urls.insert(
+                    write_fail_msg.url,
+                    Status::Failure(Failure::WriteFailure(write_fail_msg.error)),
+                );
             }
         }
     }
