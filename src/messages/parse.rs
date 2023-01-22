@@ -12,6 +12,7 @@ pub struct ParseMessage {
 #[rtype(result = "()")]
 pub struct ParseSuccessMessage {
     pub url: String,
+    pub domain: String,
     pub parsed_url: Url,
 }
 

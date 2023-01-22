@@ -32,6 +32,7 @@ impl Handler<DownloadMessage> for Downloader {
                     Ok(response) => {
                         let download_success_msg = DownloadSuccessMessage {
                             url: incoming_msg.url,
+                            domain: incoming_msg.domain,
                             response,
                         };
                         MasterMessage::Download(Download::Success(download_success_msg))

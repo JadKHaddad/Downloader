@@ -2,6 +2,7 @@ use actix::Message;
 
 use super::{
     download::{DownloadFailedMessage, DownloadSuccessMessage},
+    file::{FileFailedMessage, FileSuccessMessage},
     parse::{ParseFailedMessage, ParseSuccessMessage},
     user_input::UserInput,
     write::{WriteFailedMessage, WriteSuccessMessage},
@@ -13,6 +14,7 @@ pub enum MasterMessage {
     UserInput(UserInput),
     Parse(Parse),
     Download(Download),
+    File(File),
     Write(Write),
 }
 
@@ -24,6 +26,11 @@ pub enum Parse {
 pub enum Download {
     Success(DownloadSuccessMessage),
     Failed(DownloadFailedMessage),
+}
+
+pub enum File {
+    Success(FileSuccessMessage),
+    Failed(FileFailedMessage),
 }
 
 pub enum Write {

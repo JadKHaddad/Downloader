@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
 use crate::{
-    actors::{downloader::Downloader, parser::Parser, writer::Writer},
+    actors::{downloader::Downloader, filer::Filer, parser::Parser, writer::Writer},
     messages::{
-        download::DownloadMessage, master::MasterMessage, parse::ParseMessage, write::WriteMessage,
+        download::DownloadMessage, file::FileMessage, master::MasterMessage, parse::ParseMessage,
+        write::WriteMessage,
     },
     status::{Failure, Status},
 };
@@ -51,6 +52,9 @@ impl Handler<MasterMessage> for Master {
             MasterMessage::Download(download) => {
                 self.on_download(download, ctx);
             }
+            MasterMessage::File(file) => {
+                self.on_file(file, ctx);
+            }
             MasterMessage::Write(write) => {
                 self.on_write(write);
             }
@@ -95,6 +99,7 @@ impl Master {
                 // send the downloader a download message
                 let msg = DownloadMessage {
                     url: parse_success_msg.url,
+                    domain: parse_success_msg.domain,
                     parsed_url: parse_success_msg.parsed_url,
                 };
 
@@ -117,6 +122,34 @@ impl Master {
             crate::messages::master::Download::Success(download_success_msg) => {
                 println!("Received DownloadSuccessMessage");
 
+                // start a filer
+                let filer_addr = Filer {
+                    master_addr: ctx.address(),
+                }
+                .start();
+
+                // send the filer a file message
+                let msg = FileMessage {
+                    url: download_success_msg.url,
+                    domain: download_success_msg.domain,
+                    response: download_success_msg.response,
+                };
+
+                filer_addr.do_send(msg);
+            }
+            crate::messages::master::Download::Failed(msg) => {
+                println!("Received DownloadFailedMessage");
+                self.urls
+                    .insert(msg.url, Status::Failure(Failure::DownloadFailure));
+            }
+        }
+    }
+
+    fn on_file(&mut self, file: crate::messages::master::File, ctx: &mut Context<Master>) {
+        match file {
+            crate::messages::master::File::Success(file_success_msg) => {
+                println!("Received FileSuccessMessage");
+
                 // start a writer
                 let writer_addr = Writer {
                     master_addr: ctx.address(),
@@ -125,16 +158,17 @@ impl Master {
 
                 // send the writer a write message
                 let msg = WriteMessage {
-                    url: download_success_msg.url,
-                    response: download_success_msg.response,
+                    url: file_success_msg.url,
+                    file: file_success_msg.file,
+                    bytes: file_success_msg.bytes,
                 };
 
                 writer_addr.do_send(msg);
             }
-            crate::messages::master::Download::Failed(msg) => {
-                println!("Received DownloadFailedMessage");
+            crate::messages::master::File::Failed(msg) => {
+                println!("Received FileFailedMessage");
                 self.urls
-                    .insert(msg.url, Status::Failure(Failure::DownloadFailure));
+                    .insert(msg.url, Status::Failure(Failure::FileFailure));
             }
         }
     }

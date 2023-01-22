@@ -1,11 +1,14 @@
+use std::{fs::File, io::Error as IoError};
+
 use actix::Message;
-use reqwest::Response;
+use bytes::Bytes;
 
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct WriteMessage {
     pub url: String,
-    pub response: Response,
+    pub file: File,
+    pub bytes: Bytes,
 }
 
 #[derive(Message)]
@@ -18,5 +21,5 @@ pub struct WriteSuccessMessage {
 #[rtype(result = "()")]
 pub struct WriteFailedMessage {
     pub url: String,
-    //TODO: add error
+    pub error: IoError,
 }

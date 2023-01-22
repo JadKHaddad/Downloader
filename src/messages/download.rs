@@ -5,6 +5,7 @@ use reqwest::{Error as ReqwestError, Response, Url};
 #[rtype(result = "()")]
 pub struct DownloadMessage {
     pub url: String,
+    pub domain: String,
     pub parsed_url: Url,
 }
 
@@ -12,6 +13,7 @@ pub struct DownloadMessage {
 #[rtype(result = "()")]
 pub struct DownloadSuccessMessage {
     pub url: String,
+    pub domain: String,
     pub response: Response,
 }
 

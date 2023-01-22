@@ -12,6 +12,7 @@ async fn main() {
         "https://www.google.com",
         "https://www.youtube.com",
         "https://www.reddit.com",
+        "https://upload.wikimedia.org/wikipedia/commons/1/15/Cat_August_2010-4.jpg",
     ];
 
     let master_addr = Master::default().start();

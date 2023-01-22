@@ -29,9 +29,11 @@ impl Handler<ParseMessage> for Parser {
     fn handle(&mut self, incoming_msg: ParseMessage, _ctx: &mut Context<Self>) {
         let msg = match Url::parse(&incoming_msg.url) {
             Ok(url) => {
+                let domain = url.domain().unwrap_or("Unknown").to_owned();
                 let parse_success_msg = ParseSuccessMessage {
                     url: incoming_msg.url,
                     parsed_url: url,
+                    domain,
                 };
                 MasterMessage::Parse(Parse::Success(parse_success_msg))
             }
