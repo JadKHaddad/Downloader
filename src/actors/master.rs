@@ -8,7 +8,7 @@ use crate::{
     },
     status::{Failure, Status},
 };
-use actix::{Actor, AsyncContext, Context, Handler};
+use actix::{Actor, AsyncContext, Context, Handler /*WrapFuture*/};
 
 /**
  * Only the master has access to the input/output channels
@@ -59,6 +59,11 @@ impl Handler<MasterMessage> for Master {
                 self.on_write(write);
             }
         }
+        // Use some async code and wait for it to finish
+        // let fut = async move {
+        //     // Some asynchronous code
+        // }.into_actor(self);
+        // ctx.wait(fut);
     }
 }
 
