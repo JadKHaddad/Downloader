@@ -1,13 +1,11 @@
-use std::time::Duration;
-
-use actix::{clock, prelude::*};
+use actix::prelude::*;
 use downloader::{
     actors::master::Master,
     messages::{master::MasterMessage, user_input::UserInput},
 };
+use std::io::Result as IoResult;
 
-#[actix_rt::main]
-async fn main() {
+fn main() -> IoResult<()> {
     let urls = vec![
         "https://www.google.com",
         "https://www.youtube.com",
@@ -15,7 +13,9 @@ async fn main() {
         "https://upload.wikimedia.org/wikipedia/commons/1/15/Cat_August_2010-4.jpg",
     ];
 
-    let master_addr = Master::default().start();
+    let sys = System::new();
+
+    let master_addr = sys.block_on(async { Master::default().start() });
 
     for url in urls {
         let user_input_msg = UserInput {
@@ -25,6 +25,6 @@ async fn main() {
         master_addr.do_send(msg);
     }
 
-    clock::sleep(Duration::from_secs(20)).await;
-    System::current().stop();
+    sys.run()
+    // TODO: Stop the system when all downloads are complete
 }
