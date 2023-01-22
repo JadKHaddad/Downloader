@@ -8,7 +8,7 @@ use crate::{
     },
     status::{Failure, Status},
 };
-use actix::{Actor, AsyncContext, Context, Handler /*WrapFuture*/};
+use actix::{Actor, ActorContext /*WrapFuture*/, AsyncContext, Context, Handler};
 
 /**
  * Only the master has access to the input/output channels
@@ -58,6 +58,9 @@ impl Handler<MasterMessage> for Master {
             MasterMessage::Write(write) => {
                 self.on_write(write);
             }
+            MasterMessage::Die => {
+                ctx.terminate();
+            }
         }
         // Use some async code and wait for it to finish
         // let fut = async move {
@@ -73,7 +76,6 @@ impl Master {
         user_input: crate::messages::user_input::UserInput,
         ctx: &mut Context<Master>,
     ) {
-        println!("Received UserInputMessage");
         self.urls.insert(user_input.url.clone(), Status::Created);
 
         // start a parser
@@ -93,8 +95,6 @@ impl Master {
     fn on_parse(&mut self, parse: crate::messages::master::Parse, ctx: &mut Context<Master>) {
         match parse {
             crate::messages::master::Parse::Success(parse_success_msg) => {
-                println!("Received ParseSuccessMessage");
-
                 // start a downloader
                 let downloader_addr = Downloader {
                     master_addr: ctx.address(),
@@ -111,7 +111,6 @@ impl Master {
                 downloader_addr.do_send(msg);
             }
             crate::messages::master::Parse::Failed(msg) => {
-                println!("Received ParseFailedMessage");
                 self.urls
                     .insert(msg.url, Status::Failure(Failure::ParseFailure));
             }
@@ -125,8 +124,6 @@ impl Master {
     ) {
         match download {
             crate::messages::master::Download::Success(download_success_msg) => {
-                println!("Received DownloadSuccessMessage");
-
                 // start a filer
                 let filer_addr = Filer {
                     master_addr: ctx.address(),
@@ -143,7 +140,6 @@ impl Master {
                 filer_addr.do_send(msg);
             }
             crate::messages::master::Download::Failed(download_fail_msg) => {
-                println!("Received DownloadFailedMessage");
                 self.urls.insert(
                     download_fail_msg.url,
                     Status::Failure(Failure::DownloadFailure(download_fail_msg.error)),
@@ -155,8 +151,6 @@ impl Master {
     fn on_file(&mut self, file: crate::messages::master::File, ctx: &mut Context<Master>) {
         match file {
             crate::messages::master::File::Success(file_success_msg) => {
-                println!("Received FileSuccessMessage");
-
                 // start a writer
                 let writer_addr = Writer {
                     master_addr: ctx.address(),
@@ -173,7 +167,6 @@ impl Master {
                 writer_addr.do_send(msg);
             }
             crate::messages::master::File::Failed(file_fail_msg) => {
-                println!("Received FileFailedMessage");
                 self.urls.insert(
                     file_fail_msg.url,
                     Status::Failure(Failure::FileFailure(file_fail_msg.error)),
@@ -185,11 +178,9 @@ impl Master {
     fn on_write(&mut self, write: crate::messages::master::Write) {
         match write {
             crate::messages::master::Write::Success(write_success_msg) => {
-                println!("Received WriteSuccessMessage");
                 self.urls.insert(write_success_msg.url, Status::Success);
             }
             crate::messages::master::Write::Failed(write_fail_msg) => {
-                println!("Received WriteFailedMessage");
                 self.urls.insert(
                     write_fail_msg.url,
                     Status::Failure(Failure::WriteFailure(write_fail_msg.error)),

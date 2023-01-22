@@ -16,6 +16,7 @@ pub enum MasterMessage {
     Download(Download),
     File(File),
     Write(Write),
+    Die,
 }
 
 pub enum Parse {
